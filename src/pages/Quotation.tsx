@@ -113,9 +113,33 @@ export default function Quotation() {
   };
 
   const validateRUT = (rut: string): boolean => {
+    // Remove formatting characters and convert to uppercase
     const cleanRut = rut.replace(/[.-]/g, "").toUpperCase();
-    if (cleanRut.length < 8) return false;
-    return true;
+    
+    // RUT must be 8-9 characters (7-8 digits + verification digit)
+    if (cleanRut.length < 8 || cleanRut.length > 9) return false;
+    
+    // Extract body and verification digit
+    const body = cleanRut.slice(0, -1);
+    const providedVerifier = cleanRut.slice(-1);
+    
+    // Body must be all digits
+    if (!/^\d+$/.test(body)) return false;
+    
+    // Calculate expected verification digit using Chilean RUT algorithm (Módulo 11)
+    let sum = 0;
+    let multiplier = 2;
+    
+    for (let i = body.length - 1; i >= 0; i--) {
+      sum += parseInt(body[i], 10) * multiplier;
+      multiplier = multiplier === 7 ? 2 : multiplier + 1;
+    }
+    
+    const remainder = sum % 11;
+    const expectedVerifier = remainder === 0 ? "0" : remainder === 1 ? "K" : String(11 - remainder);
+    
+    // Compare calculated verification digit with provided one
+    return providedVerifier === expectedVerifier;
   };
 
   const handleSubmit = async () => {
